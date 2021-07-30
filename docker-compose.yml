@@ -1,0 +1,44 @@
+services:
+  nginx:
+    build:
+      context: nginx
+    container_name: nginx
+    ports:
+      - "8080:80"
+    networks:
+      - app-network
+    depends_on: 
+      - node
+
+  node:
+    build:
+      context: node
+    container_name: node
+    working_dir: /app
+    command: dockerize -wait tcp://db:3306 -timeout 20s npm start
+    expose: 
+      - "3000"
+    networks:
+      - app-network
+    depends_on: 
+      - db
+
+  db:
+    image: mysql:5.7
+    command: --innodb-use-native-aio=0
+    container_name: db
+    restart: always
+    tty: true
+    volumes: 
+      - ./mysql:/var/lib/mysql
+    environment: 
+      - MYSQL_DATABASE=nodedb
+      - MYSQL_ROOT_PASSWORD=root
+    expose:
+      - "3306"
+    networks: 
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
